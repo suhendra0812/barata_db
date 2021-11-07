@@ -1,7 +1,8 @@
-from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
-from geoalchemy2 import Geometry
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import Column, ForeignKey
+from sqlalchemy.types import Integer, Float, String, DateTime
+from geoalchemy2.types import Raster, Geometry
 
 Base = declarative_base()
 
@@ -38,6 +39,13 @@ class Ship(Base):
     def __repr__(self):
         return f"<Ship(frame_id={self.frame_id}, longitude={self.longitude}, latitude={self.latitude}, length={self.length}, datetime={self.datetime})>"
 
+class Scene(Base):
+    __tablename__ = "scenes"
+    id = Column(Integer, primary_key=True)
+    frame_id = Column(Integer, ForeignKey("frames.id"))
+    frame = relationship("Frame", back_populates="scene")
+    raster = Column(Raster)
+
 class Frame(Base):
     __tablename__ = "frames"
     id = Column(Integer, primary_key=True)
@@ -45,6 +53,7 @@ class Frame(Base):
     sensor = Column(String)
     polarisation = Column(String)
     datetime = Column(DateTime(timezone=True))
+    scene = relationship("Scene", back_populates="frame", uselist=False)
     oils = relationship("Oil", back_populates="frame", order_by=Oil.id)
     ships = relationship("Ship", back_populates="frame", order_by=Ship.id)
     geom = Column(Geometry("POLYGON"))

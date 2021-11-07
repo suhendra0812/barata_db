@@ -2,12 +2,15 @@ import os
 import glob
 from dateutil.parser import parse as dateparse
 from dotenv import load_dotenv
+from geoalchemy2.types import Raster
 import pandas as pd
 import geopandas as gpd
+import rasterio as rio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from geoalchemy2.elements import RasterElement
 
-from models import Frame, Oil, Ship
+from models import Frame, Scene, Oil, Ship
 
 def sort_by_date(x):
     fname = os.path.basename(x)
@@ -25,6 +28,7 @@ port = os.getenv("PG_PORT")
 engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{database}")
 
 Frame.__table__.create(engine, checkfirst=True)
+Scene.__table__.create(engine, checkfirst=True)
 Oil.__table__.create(engine, checkfirst=True)
 Ship.__table__.create(engine, checkfirst=True)
 
@@ -61,6 +65,20 @@ for i, data_dir in enumerate(data_dirs):
             )
 
             session.add(frame)
+
+            scene_list = glob.glob(os.path.join(data_dir, "*geo5.tif"))
+            if len(scene_list) > 0:
+                print("Insert scene...")
+                with open(scene_list[0], "rb") as f:
+                    img = f.read()
+                    raster = RasterElement(img)
+                    scene = Scene(
+                        raster=raster
+                    )
+                    scene.frame = frame
+                    frame.scene = scene
+
+                    session.add(scene)
 
             oil_list = glob.glob(os.path.join(data_dir, "*OIL.shp"))
             if len(oil_list) > 0:
