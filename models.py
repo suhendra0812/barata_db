@@ -41,10 +41,11 @@ class Ship(Base):
 
 class Scene(Base):
     __tablename__ = "scenes"
-    id = Column(Integer, primary_key=True)
+    rid = Column(Integer, primary_key=True)
     frame_id = Column(Integer, ForeignKey("frames.id"))
-    frame = relationship("Frame", back_populates="scene")
-    raster = Column(Raster)
+    frame = relationship("Frame", back_populates="scenes")
+    filename = Column(String)
+    rast = Column(Raster)
 
 class Frame(Base):
     __tablename__ = "frames"
@@ -53,7 +54,7 @@ class Frame(Base):
     sensor = Column(String)
     polarisation = Column(String)
     datetime = Column(DateTime(timezone=True))
-    scene = relationship("Scene", back_populates="frame", uselist=False)
+    scenes = relationship("Scene", back_populates="frame", order_by=Scene.rid)
     oils = relationship("Oil", back_populates="frame", order_by=Oil.id)
     ships = relationship("Ship", back_populates="frame", order_by=Ship.id)
     geom = Column(Geometry("POLYGON"))
